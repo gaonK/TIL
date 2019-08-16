@@ -18,7 +18,7 @@ OS X와 iOS는 기존의 스레드 기반의 시스템과 앱들에서 사용한
 
 ### 구성
 
-* **동시성과 앱 설계**: 비동기 앱 설계의 기초와 커스텀 작업들을 비동기적으로 수행하는 기술
+* [**동시성과 앱 설계**](Concurrency and Application Design.md): 비동기 앱 설계의 기초와 커스텀 작업들을 비동기적으로 수행하는 기술
 * **Operation Queues**: Objective-C 객체들을 이용하여 작업을 캡슐화하고 수행하는 방법
 * **Dispatch Queues**: C-기반의 앱에서 작업을 동시적으로 수행하는 방법
 * **Dispatch Sources**: 시스템 이벤트를 비동기적으로 다루는 방법
