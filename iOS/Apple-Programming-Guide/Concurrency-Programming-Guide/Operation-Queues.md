@@ -40,7 +40,7 @@ Operation은 앱의 동시성 수준을 향상시키기 위해 설계되었다. 
 
 ### Concurrent vs. Non-concurrent Operations
 
-보통 operaation을 operation queue에 추가함으로써 실행시키지만 그렇게 하는 것이 필수적인 것은 아니다. operation 객체를 `start` 메서드를 호출해 수동으로 실행시키는 것 또한 가능하다. 하지만 이렇게 하는 것은 operation이 나머지 코드에서 동시적으로 실행됨을 보장할 수 없다.  `NSObject` 클래스의 `isConcurrent` 메서드는 operation이 동기적으로 실행되어야 할 지, 비동기적으로 실행되어야 할 지 `start` 메서드가 스레드에서 호출되었느냐에 따라 알려 준다. 기본적으로 이 메서드는 `NO`를 반환하며 이는 이 operation이 동기적으로 호출 스레드에서 실행됨을 의미한다.
+보통 operation을 operation queue에 추가함으로써 실행시키지만 그렇게 하는 것이 필수적인 것은 아니다. operation 객체를 `start` 메서드를 호출해 수동으로 실행시키는 것 또한 가능하다. 하지만 이렇게 하는 것은 operation이 나머지 코드에서 동시적으로 실행됨을 보장할 수 없다.  `NSObject` 클래스의 `isConcurrent` 메서드는 operation이 동기적으로 실행되어야 할 지, 비동기적으로 실행되어야 할 지 `start` 메서드가 스레드에서 호출되었느냐에 따라 알려 준다. 기본적으로 이 메서드는 `NO`를 반환하며 이는 이 operation이 동기적으로 호출 스레드에서 실행됨을 의미한다.
 
 만약 호출 스레드와 관련해서 비동기적으로 작동되는 동시적인 operation을 구현하고 싶다면,  operation을 비동기적으로 시작시키기 위한 추가적인 코드를 작성해야 한다. 예를 들어, 작업이 끝나기 전에, 구분된 스레드를 생성하거나, 비동기적 시스템 함수를 호출하거나, `start` 메서드가 작업을 시작하고 즉각적으로 반환하게 하는 것을 보장하게 하는 어떠한 것들을 하는 것이 있다.
 
@@ -88,7 +88,7 @@ NSBlockOperation* theOp = [NSBlockOperation blockOperationWithBlock: ^{
    }];
 ```
 
-block operation 객체를 생성한 후, `addExecutionBlock:` 을 이용해 더 많은 block을 추가할 수 있다. block을 연속적으로 실행시키고 싶다면, block을 곧바로 dispatch queue에 제출해야 한다.
+block operation 객체를 생성한 후, `addExecutionBlock:` 을 이용해 더 많은 block을 추가할 수 있다. block을 직렬로 실행시키고 싶다면, block을 곧바로 dispatch queue에 제출해야 한다.
 
 
 
@@ -113,7 +113,7 @@ operation 객체를 알려진 상태에 두고, 커스텀 메인 메서드를 �
 * 데이터 값을 설정하고, operation의 결과에 접근하는 접근 메서드 
 * 아카이브와 언아카이브 객체의 저장과,  `NSCoding` 프로토콜의 메서드
 
-아래 코드는 커스텀 `NSOperation` 서브클래스를 위한 시작 템플릿이다. (이 코드는 어떻게 취소를 핸들링하는지 보여주지 않지만 가져야 할 메서드를 보여준다.) 이 클래스의 초기화 메서드는 단일 객체를 데이터 파라ㅁ미터로 사용하고 레퍼런스를 operation 객체의 내부에 저장한다. `main` 메서드는 결과를 다시 앱으로 반환하기 전에 해당 데이터 객체에서 작동한다.
+아래 코드는 커스텀 `NSOperation` 서브클래스를 위한 시작 템플릿이다. (이 코드는 어떻게 취소를 핸들링하는지 보여주지 않지만 가져야 할 메서드를 보여준다.) 이 클래스의 초기화 메서드는 단일 객체를 데이터 파라미터로 사용하고 레퍼런스를 operation 객체의 내부에 저장한다. `main` 메서드는 결과를 다시 앱으로 반환하기 전에 해당 데이터 객체에서 작동한다.
 
 ```objective-c
 @interface MyNonConcurrentOperation : NSOperation
@@ -299,3 +299,202 @@ operation 객체는 기본적으로 동기적으로 실행된다. 그렇기 때�
 
 key-value observing에 대한 더 많은 정보가 필요하거나 어떻게 커스텀 객체에서 지원할 지를 알고 싶다면 [Key-Value Observing Programming Guide](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/KeyValueObserving/KeyValueObserving.html#//apple_ref/doc/uid/10000177i) 를 봐라.
 
+
+
+### Operation의 실행 행위 커스텀하기
+
+operation 객체의 설정은 객체를 생성하고, 객체를 큐에 추가하기 전에 발생한다. 이 섹션에서 설명되는 설정 타입은 `NSOperation` 클래스를 직접 서브 클래싱했던, 이미 존재하는 서브 클래스를 사용하는지와 무관하게 모든 operation 객체에 적용될 수 있다. 
+
+#### operation 간의 종속성 설정
+
+종속성은 operation 객체를 직렬로 실행할 수 있게 하는 방법이다. 다른 operation들에 종속적인 operation은 종속된 다른 모든 operation들이 완료될 때까지 실행될 수 없다. 간단한 일대일 종속성을 만들 수도 있고, 복잡한 객체의 종속성 그래프를 만들 수도 있다. 
+
+두 operation 객체 간의 종속성을 만들기 위해서는, `NSObject`의 `addDependency:` 메서드를 사용한다. 이 메서드는 현재 operation에서 파라미터로 넘긴 타겟 operation으로의 일방적인 종속성을 만든다. 이 종속성은 현재 operation은 타겟 객체의 실행이 완료되기 전까지 실행될 수 없음을 의미한다. 종속성은 같은 큐에 있는 다른 operation들의 영향을 받지 않는다. operation 객체는 자신의 종속성을 관리하기 때문에 operation 간에 종속성을 만들어서 서로 다른 큐에 넣는 것도 허용된다. 한 가지 허용되지 않는 것은 operation 간에 순환 종속성을 생성하는 것이다. 이것은 개발자가 만들어내는 에러로, operation이 영원히 실행되지 못하게 할 것이다.
+
+operation의 모든 종속성이 실행이 완료되었을 경우, operation 객체는 일반적으로 실행 준비 상태가 된다. (`isReady` 메서드의 행위를 변경한다면 operation이 준비되었는지는 커스텀된 대로 결정된다.) operation 객체가 큐에 있으면, 큐는 operation을 언제든지 실행시킬 것이다. 직접 operation을 실행시키고자 한다면, operation의 `start` 메서드를 호출하는 것에 달려있다.
+
+> 항상 operation을 실행시키기 전, operation을 operation queue에 넣기 전에 종속성을 설정해야 한다. 이후에 추가된 종속성은 해당 operation이 실행되지 않게 할 수도 있다.
+
+각각의 operation 객체가 의존하는 종속성은 객체의 상태가 변할 때, 적절한 KVO notification을 보낸다. 만약 객체의 행위를 커스텀했다면, 종속성과 관련된 문제들을 일으키지 않기 위해 적절한 KVO notification을 생성해야 한다. 
+
+
+
+#### Operation의 실행 우선순위 변경
+
+큐에 추가된 operation의 경우, 실행 순서는 우선적으로 큐에 있는 operation이 준비가 됐는지에 달려있고, 그 다음 상대적인 우선순위에 달려있다. operation이 준비가 되었는 지는 다른 operation에 대한 종속성에 의해 결정되지만, 우선순위 레벨은 operation 객체 자기 자신의 요소이다. 새로 생성된 operation object는 기본적으로 "normal" 우선순위를 가지고, `setQueuePriority:` 메서드를 이용해 우선순위를 증가시키거나 감소시킬 수 있다.
+
+우선순위 레벨은 같은 operation queue에 있는 operation들에 한해서 적용된다. 앱이 여러 개의 operation queue를 가지고 있다면, 각각의 operation queue는 자기 자신의 operation들의 우선순위를 독립적으로 매긴다. 그렇기 때문에 서로 다른 큐에 있는 낮은 우선순위의 operation이 높은 우선순위의 operation 보다 먼저 실행되는 것이 가능하다.
+
+우선순위 레벨은 종속성의 대체제가 아니다. 우선순위는 이미 준비가 되어 있는 operation들에 대해서만 순서를 정한다. 예를 들어 어떤 큐가 높은 우선순위와 낮은 우선순위의 operation을 가지고 있고 두 operation 모두 준비가 되었을 때, 큐는 높은 우선순위의 operation을 먼저 실행시킨다. 하지만 높은 우선순위의 operation이 준비가 되어 있지 않았고, 낮은 우선순위의 operation은 준비가 되어 있다면, 큐는 낮은 우선순위의 operation을 먼저 실행시킨다. 다른 operation이 끝날 때까지 현재 operation을 실행시키지 않은 경우라면, 종속성을 이용해야 한다.
+
+
+
+#### 기본 스레드 우선순위 변경
+
+OS X v10.6 이후, operation의 기본 스레드의 작업 우선순위를 설정하는 것이 가능해졌다. 시스템의 스레드 정책은 커널에 의해 관리되지만, 일반적인 높은 우선순위의 스레드는 낮은 우선순위의 스레드보다 더 많이 실행될 수 있는 기회를 갖는다. operation 객체에서, 스레드 우선순위를 floating-point 값 0.0 ~ 1.0으로 명시할 수 있다. 스레드의 우선순위를 명시하지 않으면 operation은 우선순위가 0.5로 설정된 기본 스레드에서 실행된다. 
+
+operation의 스레드 우선순위를 설정하기 위해서는 operation의 `setThreadPriority:` 메서드를 큐에 추가하기 전에 실행해야 한다. (또는 직접 실행시켜야 한다.) operation이 실행될 때, 기본 `start` 메서드는 명시된 값을 이용해 현재 스레드의 우선순위를 변경한다. 새로운 우선순위는 operation의 `main` 메서드가 유지되는 동안만 유지된다. 다른 코드들(operation의 completion block을 포함)는 기본 스레드 우선순위에서 실행된다. 동시적인 operation을 생성하고 `start` 메서드를 override하면, 반드시 스레드 우선순위를 설정해야 한다.
+
+
+
+#### Completion Block 설정
+
+OS X v10.6 이후, operation은 메인 작업이 완료된 후 completion block을 실행시킬 수 있게 되었다. 메인 작업이 아니라고 여겨지는 어떤 작업이든 completion block이 수행하게 할 수 있다. 예를 들어, 이 block을 사용해서 관심있는 클라이언트에게 operation이 완료되었음을 알릴 수 있다. 동시적인 operation 객체는 이 block을 최종적인 KVO notification을 만드는 데 사용할 수 있다. 
+
+completion block을 설정하기 위해 `NSOperation`의 `setCompletionBlock:` 메서드를 이용해라. 이 메서드에 전달하는 block은 전달 인자나 반환 값을 가지지 않는다. 
+
+
+
+### Operation 객체의 메모리 관리
+
+이어지는 섹션에서는 operation 객체에서의 좋은 메모리 관리법에 대해 다룰 것이다. Objective-C 프로그램의 메모리 관리에 대한 일반적인 정보는 [Advanced Memory Management Programming Guide](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/MemoryMgmt/Articles/MemoryMgmt.html#//apple_ref/doc/uid/10000011i)에서 확인하라.
+
+
+
+#### 스레드 저장소를 피하라
+
+대부분의 operation이 스레드에서 실행되지만, 동시적이지 않은 operation의 경우 스레드는 operation queue에 의해 제공된다. 만약 operation queue가 스레드를 제공한다면 스레드가 operation이 아닌 operation queue에 의해 관리되도록 하는 것을 고려해야 한다. 특히, 직접 만들고 관리하지 않는 스레드와 어떤 데이터도 연관지어서는 안 된다. operation queue에 의해 관리되는 스레드는 시스템과 앱의 요구에 따라 왔다 갔다한다. 그러므로 operation 간 데이터 전송에 스레드 저장소를 이용하는 것은 신뢰할 수 없고 실패하기 쉽다. 
+
+operation 객체의 경우 스레드 저장소를 이용할 어떤 이유도 없다. operation 객체를 초기화할 때, 작업을 하기 위해 필요한 모든 것을 제공해야 한다. 그러므로, operation 객체 그 자체로 필요한 문맥상의 저장소를 제공한다. 모든 나가고 들어오는 데이터는 앱에 통합되기 전까지 혹은 더 이상 필요하지 않을 때까지 그 곳에 저장된다.
+
+
+
+#### 필요하다면 operation 객체를 참조하라
+
+operation 객체가 비동기적으로 실행되기 때문에, operation 객체를 생성하고 잊어버려도 된다고 생각하면 안 된다. 여전히 operation은 객체일 뿐이며, 코드에 필요한 참조를 관리하는 것은 개발자에게 달려있다. operation이 완료된 후 결과 데이터를 얻어야 하는 경우 특히 더 중요하다.
+
+operation에 대한 참조를 계속 유지해야 하는 이유는 큐에게 객체에 대해 물을 기회가 없을 수도 있기 때문이다. 큐는 operation을 디스패치하고, 실행시키는 일을 최대한 빨리 하는 데 모든 노력을 기울인다. 많은 경우, 큐는 operation들이 추가된 후 거의 즉시 operation들을 실행시킨다. 작성하는 코드에서 큐로부터 operation에 대한 참조를 얻으려고 할 때, operation이 이미 큐에서 완료되어 제거되었을 수 있다. 
+
+
+
+### 에러와 예외 처리
+
+operation은 기본적으로 앱의 개별적인 개체이기 때문에, 에러와 발생하는 예외를 처리해야 할 의무가 있다. OS X v.10.6 이후, `NSObject`의 기본 `start` 메서드는 예외를 catch하지 않는다. (이전 버전에서는 예외 처리를 했다.) 코드는 항상 예외를 직접 처리할 수 있어야 한다. 또한 에러 코드를 체크하고 필요하다면 앱의 적절한 부분에 알려줘야 한다. `start` 메서드를 바꿨다면, 예외를 커스텀 구현에서 잡아서 기본 스레드의 범위를 벗어나지 않게 해야 한다.
+
+에러 처리를 하기 위해 미리 준비해야 하는 에러 상황은 다음과 같다.
+
+* UNIX `errno`-style 에러 코드
+* 메서드나 함수로부터 반환된 명확한 에러 코드
+* 직접 작성한 코드나 다른 시스템 프레임워크에서 던져진 예외
+* `NSOperation` 클래스에서 던져진 예외
+  * operation이 준비되지 않았지만 `start` 메서드가 불려짐
+  * operation이 실행중이거나 끝났는데 `start` 메서드가 다시 불려짐 (취소되었기 때문일 수 있다.)
+  * 이미 실행중이거나 끝난 operation에 completion block을 추가함
+  * 이미 취소된 `NSInvocationOperation` 객체의 결과를 얻으려 함
+
+만약 커스텀 코드가 예외나 에러를 만났다면, 에러를 나머지 앱에 전달해야 한다. `NSOperation` 클래스는 에러 결과 코드나 예외를 앱의 다른 부분으로 전달하는 구체적인 메서드를 제공하고 있지 않다. 그러므로 중요한 정보일 경우 필요한 코드를 제공해야 한다.
+
+
+
+### Operation 객체의 적절한 범위 설정
+
+임의의 많은 수의 operation을 하나의 operation queue에 추가하는 것이 가능하지만 이는 실용적이지 못하다. 다른 객체들과 마찬가지로, `NSOperation` 클래스의 인스턴스는 메모리를 소모하고, 실행과 관련된 실제 비용이 든다. 각각의 operation 객체가 아주 작은 양의 작업을 하고 아주 많은 수의 operation을 생성하면, 실제 작업보다 더 많은 디스패치 시간을 소비하게 된다. 만약 앱이 이미 메모리 제약이 있다면, 메모리에 있는 아주 많은 수의 operation 객체는 성능을 저하시킬 것이다.
+
+operation을 효율적으로 사용하기 위한 열쇠는 필요한 작업의 양과 컴퓨터를 바쁘게 작동시키는 것 사이에서 균형을 찾는 것이다. operation이 합리적인 양의 작업을 하도록 해라. 예를 들면, 앱이 100개의 operation 객체를 생성하고 다른 100개의 값을 이용해 작업을 수행한다고 하면, 10개의 operation을 만들어 10개의 값들을 처리하도록 해봐라.
+
+또한 한 번에 큐에 너무 많은 수의 operation을 추가하는 것을 피하고 처리하는 것보다 더 빠른 속도로 operation 객체를 큐에 넣는 것을 피하라. 그러기보다는, 객체를 batch로 생성하라. 하나의 batch가 실행을 완료하면, completion block을 이용해서 앱에게 새로운 batch를 생성하라고 알린다. 해야 할 작업이 많아서 큐를 operation으로 가득 채워 컴퓨터를 바쁘게 작업하도록 하고 싶어도, 너무 많은 operation을 생성해서 앱의 메모리가 모자라는 현상을 바라지 않을 것이다.
+
+당연히 생성하는 operation의 수와 수행하는 작업의 양은 전적으로 앱에 달려있다. Instruments 같은 툴을 이용해서 효율성과 속도의 적절한 균형을 찾아라. Instruments와 다른 성능 툴에 관해서 더 알고 싶다면 [Performance Overview](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/PerformanceOverview/Introduction/Introduction.html#//apple_ref/doc/uid/TP40001410)를 읽어라.
+
+
+
+### Operation의 실행
+
+궁극적으로 앱은 operation을 작업을 처리하기 위해 실행시킬 필요가 있다. 이 섹션에서 operation을 실행시키는 몇 가지 방법과 런타임에 operation 실행을 조작하는 방법에 대해 설명한다.
+
+
+
+#### Operation을 Operation Queue에 추가
+
+operation을 실행시키는 가장 쉬운 방법은 `NSOperationQueue`의 인스턴스인 operation queue를 이용하는 것이다. 앱은 어떤 operation queue던지 사용하기 원하는대로 생성하고, 유지할 책임이 있다. 앱은 가지고 싶은 만큼 큐를 가질 수 있지만, 특정 시점에 실행될 수 있는 operation의 양에 있어서 실질적인 한계는 존재한다. operation queue는 시스템과 함께 동작하며 사용 가능한 코어와 시스템 로드에 적절하게 동시적인 operation의 수를 제한한다. 그러므로, 추가적인 큐를 생성하는 것이 추가적인 operation들을 실행시킬 수 있다는 뜻이 될 수 없다.
+
+큐를 생성하기 위해서 다른 객체를 생성할 때 같이 앱에서 큐를 할당해줘야 한다.
+
+```objective-c
+NSOperationQueue* aQueue = [[NSOperationQueue alloc] init];
+```
+
+operation을 큐에 추가하기 위해서 `addOperation:` 메서드를 이용한다. OS X v10.6 이후, operation의 그룹을 `addOperations:waitUntilFinished:`를 이용하거나 추가하거나 `addOperationWithBlock` 메서드를 이용해 block object를 이용해(상응하는 operation 객체 없이) 바로 큐에 추가하는 것이 가능해졌다. 이 메서드들은 각각 operation을 큐에 넣고, operation을 처리해야 함을 큐에 알린다. 대부분의 경우 operation은 거의 큐에 추가되자마자 실행되지만 operation queue는 몇 가지 이유로 추가된 operation들을 지연시킬 수 있다. 특히, 아직 완료되지 않은 다른 operation에 종속성이 있는 경우 operation의 실행은 지연될 수 있다. 다른 경우로는 operation queue가 suspended 되었거나, 이미 실행할 수 있는 최대치의 동시적 operation을 실행하고 있는 경우가 있다. 아래 예제는 operation을 큐에 추가하는 간단한 문법을 보여준다.
+
+```objective-c
+[aQueue addOperation:anOp]; // Add a single operation
+[aQueue addOperations:anArrayOfOps waitUntilFinished:NO]; // Add multiple operations
+[aQueue addOperationWithBlock:^{
+   /* Do something. */
+}];
+```
+
+반드시 필요한 설정과 수정사항을 operation 객체가 큐에 추가되기 전에 만들어야 한다. 한 번 추가되고 나면, operation은 언제든지 실행될 수 있기 때문에 원하는 변화를 주려고 하는 때는 너무 늦은 때일 수 있기 때문이다.
+
+`NSOperationQueue` 클래스가 operation의 동시적 실행을 위해 설계되었지만, 하나의 큐가 오직 하나의 operation만 동시에 실행되도록 하는 것도 가능하다. `setMaxConcurrentOperationCount:` 메서드는 operation queue의 최대 동시적 operation의 수를 설정할 수 있게 해준다. 이 메서드에 1을 넘기게 되면 큐는 한 번에 오직 하나의 operation 객체만을 실행시킨다. 비록 한 번에 하나의 operation만을 실행시키지만, 실행의 순서는 준비가 되었는지와 우선순위 같은 다른 요소들에 영향을 받는다. 그러므로 직렬화 된 operation queue는 GCD의 직렬화 된 dispatch queue와 동일한 동작을 제공하지 않는다. operation 객체의 실행 순서가 중요하다면 큐에 넣기 전에 종속성을 만들어라. 
+
+
+
+#### 직접 Operation을 실행시키기
+
+operation queue가 operation 객체를 실행시키기 가장 간편한 방법이지만, operation을 큐 없이 실행시키는 방법도 있다. operation을 직접 실행시키기로 했다면, 코드에서 미리 주의해야할 사항들이 있다. operation은 반드시 준비 상태여야 하고, 항상 `start` 메서드를 이용해 시작시켜야 한다. 
+
+operation은 `isReady` 메서드가 `YES`를 반환하기 전까지 실행되지 않는다. `isReady` 메서드는  `NSOperation`의 종속성 관리 시스템에 통합되어 operation의 종속성 상태를 제공한다. 종속성이 지워진 이후에만 operation은 실행될 수 있다. 
+
+operation을 직접 실행시킬 때는 실행의 처음 항상 `start` 메서드를 사용해야 한다. `main`이나 다른 메서드 대신 이 메서드를 사용하는 이유는 `start` 메서드는 커스텀 코드를 실행하기 전 몇 가지 안전성 체크를 하기 때문이다. 특히 기본 `start` 메서드는 operation의 종속성을 제대로 처리해야 한다는 KVO notification을 생성한다. 또한 이미 취소된 operation이 실행되는 것을 막고, operation이 실행될 준비가 안 되어 있다면 예외를 던진다.
+
+앱이 동시적 operation 객체를 정의하는 경우, `isConcurrent` 메서드를 호출하는 것을 고려해보아야 한다. `NO`를 반환하는 경우, 로컬 코드는 현재 스레드에서 operation을 동기적으로 실행시킬 지, 별도의 스레드를 먼저 생성할 지 결정할 수 있다. 하지만 이런 검사를 구현하는 것은 전적으로 개발자에게 달려있다. 
+
+아래 코드는 operation을 직접 실행시키기 전 해야하는 검사의 간단한 예제이다. 메서드가 `NO`를 반환할 경우, 타이머를 스케줄링해서 메서드를 후에 다시 호출할 수 있다. 메서드가 `YES`를 반환하기 전까지 계속 타이머를 다시 스케줄링한다. (operation이 취소되었기 때문에 발생할 수도 있다.)
+
+```objective-c
+- (BOOL)performOperation:(NSOperation*)anOp
+{
+   BOOL        ranIt = NO;
+ 
+   if ([anOp isReady] && ![anOp isCancelled])
+   {
+      if (![anOp isConcurrent])
+         [anOp start];
+      else
+         [NSThread detachNewThreadSelector:@selector(start)
+                   toTarget:anOp withObject:nil];
+      ranIt = YES;
+   }
+   else if ([anOp isCancelled])
+   {
+      // If it was canceled before it was started,
+      //  move the operation to the finished state.
+      [self willChangeValueForKey:@"isFinished"];
+      [self willChangeValueForKey:@"isExecuting"];
+      executing = NO;
+      finished = YES;
+      [self didChangeValueForKey:@"isExecuting"];
+      [self didChangeValueForKey:@"isFinished"];
+ 
+      // Set ranIt to YES to prevent the operation from
+      // being passed to this method again in the future.
+      ranIt = YES;
+   }
+   return ranIt;
+}
+```
+
+
+
+#### Operation 취소
+
+한 번 operation queue에 추가되면, operation 객체는 queue의 소유가 되고 지워지지 않는다. 큐에서 제거하는 유일한 방법은 operation을 취소하는 것이다. 단일 operation 객체를 `cancel` 메서드를 호출함으로써 취소할 수 있고, `cancelAllOperations` 메서드를 호출함으로써 opearation queue에 있는 모든 operation 객체를 취소할 수 있다.
+
+operation이 정말로 필요하지 않을 때만 operation을 취소해라. 발행된 cancel 명령은 operation 객체를 "cancelled" 상태로 변경시키고, 이는 operation을 실행되지 못하게 한다. 취소된 operation은 "finished"로 여겨지기 때문에 적절한 KVO notification을 받은 종속된 객체는 해당 종속성을 지운다. 그러므로 모든 operation을 취소시키는 일은 앱을 끄거나 유저가 특별히 취소를 요청하는 중요한 몇가지 이벤트에 대해서 일반적으로 발생한다. 
+
+
+
+#### Operation이 완료되기 까지 대기
+
+최고의 성능을 위해서 operation을 가능한 비동기적으로 설계해서 operation이 실행되는 동안 앱이 자유롭게 다른 작업들을 할 수 있게 해라. operation을 생성하는 코드가 operation의 결과도 처리해야 한다면, `NSOperation`의  `waitUntilFinished` 메서드를 이용해서 operation이 완료되기 전까지 코드를 실행되지 않게 할 수 있다. 일반적으로, 이 메서드를 호출하지 않는 것이 좋다. 현재 스레드를 차단하는 것이 편리한 솔루션일 수 있으나 그것은 코드에 직렬성을 도입하고 전체 동시성 양을 제한한다. 
+
+> 앱의 main 스레드에서 operation을 기다려서는 안 된다. 반드시 이차적인 스레드나 다른 operation에서 기다려야 한다. 메인 스레드를 막는 것은 앱이 유저 이벤트에 반응하지 못하게 막고, 이것은 앱이 응답성이 없다고 보여지게 만든다. 
+
+단일 작업이 완료되기를 기다리는 것 외에도, `NSOperationQueue`의 `waitUntilAllOperationsAreFinished` 메서드를 이용해서 큐의 모든 작업이 끝나기를 기다릴 수 있다. 전체 큐가 완료되기를 기다릴 때, 다른 스레드가 operation을 큐에 추가하는 것이 가능하므로 대기 시간이 길어질 수 있음을 알아야 한다.
+
+
+
+#### 큐의 정지, 재개
+
+operation의 실행에 일시적인 중단을 발행하고 싶다면, 관련된 operation queue를 `setSuspended:` 메서드를 이용해 정지시킬 수 있다. 큐를 정지시키는 것은 이미 실행 중인 operation의 작업을 중단시키는 것은 아니다. 간단하게 새로운 operation이 실행되는 것을 막는다. 다시 작업을 재개하길 기대할 수도 있기 때문에 진행 중인 작업을 정지시키라는 유저 요청에 의해 큐를 중단할 수도 있다. 
