@@ -160,3 +160,32 @@ UIKit의 기본 좌표 시스템은 왼쪽 상단 코너를 origin으로 하고,
 * `bounds` 프로퍼티를 설정했을 때, `frame` 프로퍼티의 크기 값이 bounds 사각형의 새로운 크기에 맞게 변경된다.
 
 기본적으로 뷰의 frame은 슈퍼 뷰의 프레임에 잘리지(clip) 않는다. 서브 뷰가 슈퍼 뷰의 프레임 밖에 있더라도 전체가 렌더링된다. 그렇지만 이 행위를 슈퍼 뷰의 `clipsToBounds` 프로퍼티를 `YES`로 설정함으로써 변경시킬 수 있다. 서브 뷰가 시각적으로 잘리던, 그렇지 않던 터치 이벤트는 항상 타겟 뷰의 슈퍼 뷰의 bounds 사각형에 기반한다. 다시 말해 슈퍼 뷰의 bounds 사각형을 벗어난 뷰의 일부에서 발생하는 터치 이벤트는 해당 뷰로 전달되지 않는다.
+
+
+
+#### 좌표 시스템 transformation
+
+좌표 시스템 transformaation은 뷰(또는 컨텐츠)를 빠르고 쉽게 바꿀 수 있는 방법을 제공한다. *affine* transformation은 한 좌표 시스템에 있는 점이 다른 좌표 시스템의 점으로 어떻게 매핑되는 지를 나타내는 수학적인 행렬이다. affine transformation을 슈퍼 뷰에 상대적으로 그 뷰의 크기, 위치, 방향을 변경하고 싶을 때 적용할 수 있다. 또한 affine transformation을 드로잉 코드에서 각각의 렌더링된 컨텐트에 대해 동일한 타입의 작업을 수행할 수 있다. 그러므로 어떻게 affine transformation을 적용시킬 지는 문맥에 달려있다.
+
+* 전체 뷰를 변경시키고 싶을 때, 뷰의 [transform]( https://developer.apple.com/documentation/uikit/uiview/1622459-transform) 프로퍼티에서 affine transformation을 수정해라
+* 뷰의 [drawRect:](https://developer.apple.com/documentation/uikit/uiview/1622529-draw) 메서드의 일부 컨텐트를 변경시키고 싶을 때, 활성화 된 그래픽스 문맥과 관련된 affine 변환을 수정해라
+
+보통 애니메이션을 구현하고 싶을 때, 뷰의 `transform` 프로퍼티를 수정한다. 예를 들면, 이 프로퍼티를 이용해서 center 점을 중심으로 뷰를 회전시키는 애니메이션을 만들 수 있다. 이 프로퍼티를 이용해서 뷰의 위치나 크기를 슈퍼 뷰의 좌표 시스템 안에서 변경시키는 것과 같은 뷰의 영구적인 변화를 위해서 사용하지는 않는다. 그런 타입의 변경을 위해서는 대신 뷰의 frame 사각형을 변경해야 한다.
+
+> 뷰의 `transform` 프로퍼티를 변경시킬 때는, 모든 transformation이 뷰의 center 점과 관련되어 수행된다.
+
+뷰의 `drawRect:` 메서드에서, affine transformation을 그리고 싶은 대로 위치와 방향을 변경하고 싶어서 사용한다. 객체의 위치를 뷰의 어떤 점에 고정시키기 보다, 각각의 객체를 어떤 고정된 점에 대한 상대적인 객체로 만든다. 이는 보통 (0, 0)이다. 그리고 위치에 대한 transformation을 드로잉에 관해 우선하도록 만든다. 그러므로 뷰의 객체의 위치를 변경시킬 때, 해줘야 하는 일은 transform을 수정하는 것 뿐이다. 이것은 새로운 해당 객체의 새로운 위치를 생성하는 것보다 훨씬 빠르고 비용이 덜 드는 방법이다. [CGContextGetCTM](https://developer.apple.com/documentation/coregraphics/1454691-cgcontextgetctm) 함수를 이용해서 그래픽스 문맥과 관련된 affine transformation을 검색할 수 있고 관련 코어 그래픽 함수를 이용해서 드로잉하는 중에 이 변환을 설정하거나 수정하는 것이 가능하다.
+
+current transformation matrix (CTM)은 언제나 쓰이는 affine transformation이다. 전체 뷰에 대한 지오메트리를 변경시킬 때, CTM은 뷰의 `transform` 프로퍼티에 저장된 affine transformation이다. `drawRect:` 메서드에서 CTM은 활성화 된 그래픽스 문맥과 관련있는 affine transformation이다.
+
+각각의 서브 뷰의 좌표 시스템은 부모의 좌표 시스템 위에 만들어진다. 그렇기 때문에 뷰의 `transform` 프로퍼티를 변경할 때, 그것이 뷰와 그 뷰의 모든 서브 뷰에 영향을 미친다. 그러나 이러한 변경은 화면에 있는 뷰의 마지막 렌더링에만 영향을 미친다. 각각의 뷰는 각각의 bounds에 맞게 컨텐트를 그리고, 서브 뷰의 레이아웃을 결정하기 때문에, 슈퍼 뷰의 드로잉과 렌더링 단계에서의 transform은 무시할 수 있다.
+
+아래 그림은 서로 다른 두 개의 회전 요소를 어떻게 렌더링할 때 시각적으로 결합할 수 있는 지를 보여준다. `drawRect:` 메서드에서 45도 회전 요소를 적용해서 모양을 45도 회전되 보이게 만든다. 또 다른 45도 회전 요소를 뷰에 적용하면 모양이 90도 회전 되어 보이게 만든다. 이 모양은 여전히 단순히 뷰에 45도 기울어진 상태이다. 그러나 뷰의 회전은 더 많이 회전된 것처럼 보이게 한다.
+
+![img](https://developer.apple.com/library/archive/documentation/WindowsViews/Conceptual/ViewPG_iPhoneOS/Art/xform_rotations.jpg)
+
+
+
+> 중요: 만약 뷰의 `transform` 프로퍼티가 항등 변환이 아닌 경우, 해당 뷰의 프레임 프로퍼티는 정의되지 않고 무시된다. 뷰의 transformation을 적용할 때, 반드시 뷰의 `bounds`와 `center` 프로퍼티를 이용해서 뷰의 크기와 위치를 가져와야 한다. 그렇게 하면 어떤 서브 뷰의 frame 사각형이든 뷰의 bounds에 연관되어 있기 때문에 유효하다.
+
+뷰의 transform 프로퍼티를 런타임에 변경시키는 것과 관련된 더 많은 정보는 이 문서의 [Translating, Scaling, and Rotating Views](https://developer.apple.com/library/archive/documentation/WindowsViews/Conceptual/ViewPG_iPhoneOS/CreatingViews/CreatingViews.html#//apple_ref/doc/uid/TP40009503-CH5-SW4)를 참고해라. 드로잉하는 동안 컨텐트를 위치시키는 것에 어떻게 transform을 사용하는 지에 대해 더 궁금하면 [Drawing and Printing Guide for iOS](https://developer.apple.com/library/archive/documentation/2DDrawing/Conceptual/DrawingPrintingiOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40010156)를 참고해라.
