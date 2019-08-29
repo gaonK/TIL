@@ -53,7 +53,7 @@ dispatch queue는 Grand Central Dispatch 기술의 일부이며 C 런타임의 �
 
 #### Dispatch Sources
 
-dispatch source는 특정 타입의 시스템 이벤트를 비동기적으로 처리하기 위한 C 기반의 메커니즘이다. dispatch source는 특정 타입의 시스템 이벤트에 대한 정보를 캡슐화하고 특정 block 객체 또는 함수를 dispatch queue에 해당 이벤트가 발생할 때마다 제출합니다. dispatch source를 아래의 시스템 이벤트들이 발생할 때 사용할 수 있습니다.
+dispatch source는 특정 타입의 시스템 이벤트를 비동기적으로 처리하기 위한 C 기반의 메커니즘이다. dispatch source는 특정 타입의 시스템 이벤트에 대한 정보를 캡슐화하고 특정 block 객체 또는 함수를 dispatch queue에 해당 이벤트가 발생할 때마다 제출한다. dispatch source를 아래의 시스템 이벤트들이 발생할 때 사용할 수 있다.
 
 * 타이머
 * 시그널 핸들러
