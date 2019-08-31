@@ -210,5 +210,68 @@ iOS에서 모든 좌표값과 거리는 point로 불리는 실수값으로 표�
 
 기기 레벨에서, 뷰의 모든 좌표는 어떤 point의 pixel로 변환되어야 한다. 그러나 유저 좌표 시스템의 point를 기기 좌표 시스템의 pixel로 매핑하는 것은 보통 시스템에 의해 제어된다. UIKit과 Core Graphics는 주로 모든 좌표 값이 point를 이용해서 표현되는 벡터 기반의 드로잉 모델을 사용한다. 만약 Core Graphics를 이용해서 curve를 그리고 싶으면, curve를 화면의 해상도에 상관 없이 같은 값을 이용해서 그리면 된다. 
 
-OpenGL ES와 같은 이미지나 pixel 기반 기술로 작업해야 하는 경우, iOS는 pixel을 관리할 수 있는 기능을 제공한다. 
+OpenGL ES와 같은 이미지나 pixel 기반 기술로 작업해야 하는 경우, iOS는 pixel을 관리할 수 있는 기능을 제공한다. 앱 번들에 리소스로 저장된 정적 이미지 파일 같은 경우, iOS는 다른 pixel 밀도로 이미지를 정하고 현재 화면의 해상도와 가장 맞는 이미지를 로드하기 위한 규칙을 정의한다. 또한 뷰는 pixel 기반의 드로잉 코드가 수동으로 조정해서 고해상도의 화면을 수용할 수 있도록 현재 배율 요소에 대한 정보를 제공한다. 각각 다른 화면 해상도에서 pixel 기반 컨텐트를 다루는 기술에 대해 더 궁금하다면 [Drawing and Printing Guide for iOS](https://developer.apple.com/library/archive/documentation/2DDrawing/Conceptual/DrawingPrintingiOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40010156) 에 있는 [Supporting High-Resolution Screens In Views](https://developer.apple.com/library/archive/documentation/2DDrawing/Conceptual/DrawingPrintingiOS/SupportingHiResScreensInViews/SupportingHiResScreensInViews.html#//apple_ref/doc/uid/TP40010156-CH15)를 확인해라. 
+
+
+
+### 뷰의 런타임 인터렉션 모델
+
+유저가 유저 인터페이스와 상호작용하거나, 프로그래밍적으로 뭔가를 변경시킬 때마다 복잡한 이벤트 시퀀스가 인터렉션을 제어하기 위해서 UIKit의 내부에서 발생한다. 이 시퀀스 동안 특정 지점ㅁ에서 UIKit은 뷰 클래스를 호출하고 앱 대신 응답할 수 있는 기회를 제공한다. 이러한 콜 아웃 지점을 이해하는 것은 뷰가 어디에서 시스템에 적합한 지를 이해하는 것에 중요하다. 아래 그림은 유저가 화면을 터치하면서 시작되고, 응답으로 그래픽 시스템을 이용해서 화면의 컨텐트를 업데이트 시키는 기본적인 이벤트 시퀀스를 보여준다. 프로그래밍적으로 발생되는 다른 액션들에 대해서도 동일한 이벤트 시퀀스가 발생할 수 있다.
+
+![UIKit interactions with your view objects](https://developer.apple.com/library/archive/documentation/WindowsViews/Conceptual/ViewPG_iPhoneOS/Art/drawing_model.jpg)
+
+아래 단계들은 위의 그림을 좀 더 세분화시켜 각 단계에서 어떤 일이 일어나는 지, 어떻게 앱이 응답하기를 바라는 지를 설명한다.
+
+1. 유저가 화면을 터치한다.
+
+2. 하드웨어가 터치 이벤트를 UIKit 프레임워크에 보고한다.
+
+3. UIKit 프레임워크는 UIEvent 객체로 터치를 패키징하고 적절한 뷰로 보낸다. (어떻게 보내는지 자세한 설명은 Event Handling Guide for iOS를 참고해라)
+
+4. 뷰의 이벤트 핸들링 코드가 이벤트에 응답한다. 예를 들어 코드는 다음과 같을 수 있다.
+
+   * 뷰의 프로퍼티(frame, bounds, alpha, ...)를 바꾸거나, 서브 뷰를 바꾼다.
+   * `setNeedsLayout` 메서드를 호출해서 뷰가 레이아웃 업데이트가 필요함을 표시한다.
+   * `setNeedsDisplay`나 `setNeedsDisplayInRect:`를 호출해서 뷰(또는 서브 뷰)가 다시 그려져야 함을 표시한다.
+   * 컨트롤러에게 몇몇 데이터가 변경되었음을 알린다.
+
+   물론 뷰가 어떤 행동을 해야 할 지, 어떤 메서드를 호출해야 할 지는 개발자에게 달려있다.
+
+5. 어떤 이유에서 뷰의 지오메트리가 변경되던, UIKit은 아래의 규칙에 따라 서브 뷰를 업데이트한다.
+
+   1. 뷰의 autoresizing 규칙을 설정해뒀다면, UIKit은 각각의 뷰에 이 규칙을 적용시킨다. autoresizing 규칙이 어떻게 작동하는 지에 대한 정보가 궁금하다면 [Handling Layout Changes Automatically Using Autoresizing Rules](https://developer.apple.com/library/archive/documentation/WindowsViews/Conceptual/ViewPG_iPhoneOS/CreatingViews/CreatingViews.html#//apple_ref/doc/uid/TP40009503-CH5-SW5)를 참고해라.
+
+   2. 뷰가 `layoutSubviews` 메서드를 실행시킨다면, UIKit이 호출한다. 
+
+      커스텀 뷰에서 이 메서드를 override할 수 있고, 서브 뷰의 위치와 크기를 조절하기 위해 이 메서드를 사용할 수 있다. 예를 들어 큰 스크롤 가능한 영역을 제공하는 뷰는 커다란 뷰를 생성하기 보다, 타일로서 여러 서브 뷰가 필요하고 그것은 메모리에 적합하지 않다. 이 메서드의 구현에서, 뷰는 현재 보이지 않는 서브 뷰들을 숨기거나 재위치 시켜서 새로 보여지는 컨텐트에 그린다. 이 프로세스의 과정에서, 뷰의 레이아웃 코드는 다시 그려질 필요가 있는 뷰들을 무효화(invalidate)시킬 수 있다.
+
+6. 어떤 뷰의 어떤 부분이 다시 그려질 필요가 있다고 표시되면, UIKit이 view에 자기 자신을 다시 그릴 것을 요청한다.
+
+   명시적으로 `drawRect:` 메서드를 정의한 커스텀 뷰의 경우, UIKit이 해당 메서드를 호출한다. 이 메서드의 구현은 뷰의 지정된 영역을 최대한 빨리 다시 그려야 한다. 이 지점에서 추가적인 레이아웃 변경을 만들지 말고 앱의 데이터 모델에 다른 변화를 주지 마라. 이 메서드이 목적은 뷰의 시각적인 컨텐트를 업데이트하는 것이다.
+
+   표준 시스템 뷰는 보통 `drawRect:` 메서드를 구현하지 않고 드로잉을 관리한다.
+
+7. 업데이트 된 뷰는 앱의 다른 보여지는 컨텐트들과 합쳐져서 그래픽 하드웨어로 보내진다.
+
+8. 그래픽 하드웨어는 렌더링된 컨텐트를 화면으로 전송한다.
+
+
+
+> 위의 업데이트 모델은 주로 표준 시스템 뷰와 드로잉 기술을 사용하는 앱에 적용된다. OpenGL ES를 드로잉에 사용하는 앱은 일반적으로 단일 전체 화면 뷰를 구성하고 관련된 OpenGL ES 그래픽 컨텍스트에 직접 그린다. 이 경우, 뷰는 여전히 터치 이벤트를 제어하지만, 전체 화면이므로 서브 뷰의 레이아웃을 정할 필요는 없다. 이에 대해 더 많은 정보가 필요하면 [OpenGL ES Programming Guide](https://developer.apple.com/library/archive/documentation/3DDrawing/Conceptual/OpenGLES_ProgrammingGuide/Introduction/Introduction.html#//apple_ref/doc/uid/TP40008793)를 참고해라.
+
+위에서 언급 된 단계에서 커스텀 뷰의 주요 통합 지점은 다음과 같다.
+
+* 이벤트 핸들링 메서드
+  * [`touchesBegan:withEvent:`](https://developer.apple.com/documentation/uikit/uiresponder/1621142-touchesbegan)
+  * [`touchesMoved:withEvent:`](https://developer.apple.com/documentation/uikit/uiresponder/1621107-touchesmoved)
+  * [`touchesEnded:withEvent:`](https://developer.apple.com/documentation/uikit/uiresponder/1621084-touchesended)
+  * [`touchesCancelled:withEvent:`](https://developer.apple.com/documentation/uikit/uiresponder/1621116-touchescancelled)
+* `layoutSubviews` 메서드
+* `drawRect` 메서드
+
+이것들은 가장 보편적으로 view에서 override 되는 메서드들이다. 그렇지만 이 메서드들을 전부 override할 필요는 없다. 이벤트를 제어하기 위해 gesture recognizer를 사용하면 이벤트 핸들링 메서드를 전혀 사용할 필요가 없다. 유사하게 서브 뷰를 포함하고 있지 않거나, 그것의 사이즈가 변하지 않으면 `layoutSubviews` 메서드를 override할 이유가 없다. 마지막으로 `drawRect:` 메서드는 런타임에 뷰의 컨텐트가 변할 수 있거나, UIKit이나 Core Graphics과 같은 네이티브 기술을 이용해서 드로잉을 수행할 때만 필요하다. 
+
+이 주요 통합 지점들을 기억하는 것도 중요하지만 이 지점이 유일한 지점은 아니라는 것을 기억해야 한다. UIView 클래스의 몇몇 메서드는 서브 클래스의 포인트들을 override하도록 설계되어 있다. 어떤 메서드가 커스텀 구현에서 override 하기 적합한 지 알기 위해서는 [UIView class Reference](https://developer.apple.com/documentation/uikit/uiview)의 메서드 설명을 봐야 한다.
+
+
 
