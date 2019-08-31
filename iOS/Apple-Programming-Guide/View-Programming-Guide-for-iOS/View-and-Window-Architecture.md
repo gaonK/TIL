@@ -189,3 +189,26 @@ current transformation matrix (CTM)은 언제나 쓰이는 affine transformation
 > 중요: 만약 뷰의 `transform` 프로퍼티가 항등 변환이 아닌 경우, 해당 뷰의 프레임 프로퍼티는 정의되지 않고 무시된다. 뷰의 transformation을 적용할 때, 반드시 뷰의 `bounds`와 `center` 프로퍼티를 이용해서 뷰의 크기와 위치를 가져와야 한다. 그렇게 하면 어떤 서브 뷰의 frame 사각형이든 뷰의 bounds에 연관되어 있기 때문에 유효하다.
 
 뷰의 transform 프로퍼티를 런타임에 변경시키는 것과 관련된 더 많은 정보는 이 문서의 [Translating, Scaling, and Rotating Views](https://developer.apple.com/library/archive/documentation/WindowsViews/Conceptual/ViewPG_iPhoneOS/CreatingViews/CreatingViews.html#//apple_ref/doc/uid/TP40009503-CH5-SW4)를 참고해라. 드로잉하는 동안 컨텐트를 위치시키는 것에 어떻게 transform을 사용하는 지에 대해 더 궁금하면 [Drawing and Printing Guide for iOS](https://developer.apple.com/library/archive/documentation/2DDrawing/Conceptual/DrawingPrintingiOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40010156)를 참고해라.
+
+
+
+#### Points vs. Pixels
+
+iOS에서 모든 좌표값과 거리는 point로 불리는 실수값으로 표현된다. 포인트의 측정 가능한 크기는 기기에 따라 다르며 크게 관련이 없다. point를 이해하기 위해  point가 드로잉을 위한 고정된 프레임 참조를 제공한다는 점을 아는 것이 중요하다. 
+
+아래 테이블은 다양한 iOS 기기의 portrait 방향일 때의 화면 크기를 보여준다. (point 기준) 가로 x 세로로 표현되어 있다. 이러한 화면 크기에 맞게 인터페이스를 설계하면 해당 유형의 기기에 뷰가 적절하게 표시된다.
+
+| Device                                                   | Screen dimensions (in points) |
+| :------------------------------------------------------- | :---------------------------- |
+| iPhone and iPod touch devices with 4-inch Retina display | 320 x 568                     |
+| Other iPhone and iPod touch devices                      | 320 x 480                     |
+| iPad                                                     | 768 x 1024                    |
+
+각 유형의 기기에서 사용되는 point 기반 측정 시스템은 유저의 좌표 공간을 정의한다. 이것은 거의 모든 코드에서 사용하는 표준 좌표 시스템이다.  point와 유저 좌표 공간은 뷰의 지오메트리를 조작하거나 Core Graphics 함수를 호출해서 뷰의 컨텐츠를 그릴 때 사용된다. 유저 좌표 공간에 있는 좌표가 가끔은 기기의 화면에서 pixel에 직접적으로 매핑되지만, 이런 상황일 거라고 가정하면 안 된다. 대신, 아래의 사항을 반드시 고려해야 한다.
+
+**한 point가 화면에서 반드시 한 pixel에 대응되는 것은 아니다.**
+
+기기 레벨에서, 뷰의 모든 좌표는 어떤 point의 pixel로 변환되어야 한다. 그러나 유저 좌표 시스템의 point를 기기 좌표 시스템의 pixel로 매핑하는 것은 보통 시스템에 의해 제어된다. UIKit과 Core Graphics는 주로 모든 좌표 값이 point를 이용해서 표현되는 벡터 기반의 드로잉 모델을 사용한다. 만약 Core Graphics를 이용해서 curve를 그리고 싶으면, curve를 화면의 해상도에 상관 없이 같은 값을 이용해서 그리면 된다. 
+
+OpenGL ES와 같은 이미지나 pixel 기반 기술로 작업해야 하는 경우, iOS는 pixel을 관리할 수 있는 기능을 제공한다. 
+
