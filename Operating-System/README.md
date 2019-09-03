@@ -5,8 +5,8 @@
 * [System Structure & Program Execution](https://ga0n.tistory.com/entry/System-Structure-Program-Execution?category=788305)
 * [Process](https://ga0n.tistory.com/entry/Process?category=788305)
 * [Process Management](https://ga0n.tistory.com/entry/Process-Management?category=788305)
-* CPU Scheduling
-* Process Synchronization
+* [CPU Scheduling](https://ga0n.tistory.com/entry/CPU-Scheduling?category=788305)
+* [Process Synchronization](https://ga0n.tistory.com/entry/Process-Synchronization?category=788305)
 * Deadlocks
 * Memory Management
 * Virtual Memory
