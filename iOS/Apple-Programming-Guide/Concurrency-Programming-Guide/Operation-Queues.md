@@ -73,7 +73,7 @@ invocation operation을 만드는 프로세스는 간단하다. 클래스의 새
 
 
 
-### NSBlockOperaation 객체 생성
+### NSBlockOperation 객체 생성
 
 `NSBlockOperation` 객체는 `NSOperation`의 구체적인 서브클래스로, 하나 이상의 block 객체의 wrapper 역할을 한다. 이 클래스는 이미 operation queue를 사용하고 있으면서 dispatch queue를 생성하고 싶지 않은 앱에게 객체지향적인 wrapper를 제공한다. 또한 operation 종속성, KVO notification, 기타 dispatch queue에서 가능하지 않은 다른 기능들의 이점을 취하기 위해 block operation을 사용할 수도 있다.  
 
@@ -92,17 +92,17 @@ block operation 객체를 생성한 후, `addExecutionBlock:` 을 이용해 더 
 
 
 
-### Defining a Custom Operaation Object
+### Defining a Custom Operation Object
 
-만약 block operation과 invocation operation 객체가 앱에 필요한 기능을 충족시키지 못할 때, `NSOperation`을 직접 서브클래싱해서 원하는 행위를 추가할 수 있다. `NSOperation` 클래스는 모든 operation 객체에 대한 일반적인 서브클래싱 지점을 제공한다. 또한 이 클래스는 종속성, KVO notification과 관련된 작업들을 제어할 수 있는 상당한 양의 기반 인프라를 제공한다. 그러나, 여전히 operation이 원하는 기능을 수행하게 하기 위해서 기존의 기반 인프라를 보완해야 할 필요가 있다. 추가적으로 해야 할 일의 양은 구현하려는 operaation이 비동시적인지, 동시적인지에 따라 달라진다.
+만약 block operation과 invocation operation 객체가 앱에 필요한 기능을 충족시키지 못할 때, `NSOperation`을 직접 서브클래싱해서 원하는 행위를 추가할 수 있다. `NSOperation` 클래스는 모든 operation 객체에 대한 일반적인 서브클래싱 지점을 제공한다. 또한 이 클래스는 종속성, KVO notification과 관련된 작업들을 제어할 수 있는 상당한 양의 기반 인프라를 제공한다. 그러나, 여전히 operation이 원하는 기능을 수행하게 하기 위해서 기존의 기반 인프라를 보완해야 할 필요가 있다. 추가적으로 해야 할 일의 양은 구현하려는 operation이 비동시적인지, 동시적인지에 따라 달라진다.
 
-비동시적인 operation을 정의하는 것은 동시적인 operation을 정의하는 것에 비해 훨씬 간단하다. 비동시적인 operaation에 있어서, 해야 할 것은 메인 작업을 수행하고, 취소 이벤트에 적절하게 반응하는 것이다. 존재하는 클래스의 기반 인프라는 다른 일들을 처리해 줄 것이다. 동시적인 operation의 경우, 기반 인프라를 커스텀 코드를 이용해서 변경할 필요가 있다. 아래 섹션들에서 어떻게 이 두 가지 타입의 객체를 구현하는지 보여주겠다.
+비동시적인 operation을 정의하는 것은 동시적인 operation을 정의하는 것에 비해 훨씬 간단하다. 비동시적인 operation에 있어서, 해야 할 것은 메인 작업을 수행하고, 취소 이벤트에 적절하게 반응하는 것이다. 존재하는 클래스의 기반 인프라는 다른 일들을 처리해 줄 것이다. 동시적인 operation의 경우, 기반 인프라를 커스텀 코드를 이용해서 변경할 필요가 있다. 아래 섹션들에서 어떻게 이 두 가지 타입의 객체를 구현하는지 보여주겠다.
 
 
 
 #### 메인 작업 수행
 
-최소한, 모든 operaation은 다음 메서드를 구현해야 한다.
+최소한, 모든 operation은 다음 메서드를 구현해야 한다.
 
 * 커스텀 초기화 메서드
 * `main`
