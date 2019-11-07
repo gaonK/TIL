@@ -26,7 +26,7 @@ operatioin 객체는 `NSOperation` (Foundation 프레임워크) 클래스의 인
 
 모든 operation 객체는 다음의 주요 기능을 지원한다.
 
-* operation 객체 간의 그레프 기반 종속성 설정을 지원한다. 이 종속성은 주어진 operation이 종속된 operation들의 실행이 끝날 때까지 실행되지 않도록 한다. 
+* operation 객체 간의 그프 기반 종속성 설정을 지원한다. 이 종속성은 주어진 operation이 종속된 operation들의 실행이 끝날 때까지 실행되지 않도록 한다. 
 * operation의 메인 작업이 끝나고 실행되는 옵셔널 completion block을 지원한다. 
 * KVO notification을 이용해 operation의 실행 상태 변화를 모니터링하는 것을 지원한다. KVO notification을 어떻게 관찰하는 지 알고 싶다면 [Key-Value Observing Programming Guide](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/KeyValueObserving/KeyValueObserving.html#//apple_ref/doc/uid/10000177i) 를  봐라.
 * operation들의 우선순위를 지정해서 관련된 실행 순서들에 영향을 준다. 
