@@ -52,3 +52,35 @@ dispatch queue에 추가적으로 Grand Central Dispatch는 큐를 사용한 몇
 | Dispatch Semaphores | dispatch semaphore는 전통적인 세마포어와 유사하지만 일반적으로 더 효율적이다. dispatch semaphore는 커널을 오직 세마포어가 사용 불가능(unavailable)할 때 스레드가 블락되어야 함을 알리기 위해 호출한다. 만약 세마포어가 사용 가능(available)하다면 커널 호출은 일어나지 않는다. |
 | Dispatch sources    | dispatch source는 시스템 이벤트에 대한 알림(notification)을 생성한다. dispatch source는 프로세스 알림, signal, descriptor 이벤트 같은 이벤트들을 모니터링하기 위해 사용될 수 있다. 어떤 이벤트가 발생하면, dispatch source는 작업 코드를 비동기적으로 특정 dispatch queue에 실행시키기 위해 제출한다. |
 
+
+
+### Block을 이용한 작업 구성
+
+Block 객체는 C-기반 언어 특징으로 C, Objective-C, C++ 코드에서 사용할 수 있다. block을 이용하면 독립적인 작업 단위를 설정이 쉽다. function pointer와 비슷해보일 수 있지만, block은 사실 객체와 유사한 자료구조에 의해 표현되고 컴파일러가 이를 생성하고 관리한다. 컴파일러는 작성된 코드와 관련된 데이터를 포장하고 힙 영역에서 존재할 수 있고 앱 주변에 전달할 수 있는 형태로 캡슐화한다. 
+
+block을 이용할 때의 주요 장점 중 하나는 block이 자기 자신의 lexical scope을 벗어난 영역의 변숟 사용할 수 있다는 것이다. block을 함수나 메서드에서 정의했을 때, block은 전통적인 코드 block의 역할과 유사한 역할을 한다. 예를  들자면 block은 부모 영역에서 정의된 변수의 값들을 읽을 수 있다. block에서 접근된 변수들은 힙 영역에 있는 block 자료 구조 내로 복사되고 그렇기 때문에 block은 후에 이 변수들에 접근할 수 있다. block들이 dispatch queue에 추가될 때, 이 값들은 읽기 전용 포맷으로 남아야 한다. 그러나 동기적으로 실행되는 block은 부모의 호출 영역에서 데이터를 리턴하는 것처럼 작동하는  `__block` 키워드를 포함한 변수를 이용할 수 있다.
+
+function pointer를 이용할 때와 유사하게 block을 inline으로 선언할 수 있다. 두드러지는 차이는 block name은 caret(^)을 asterisk(*) 대신 이용한다는 것이다. function pointer와 같이 block에 인자(argument)를 전달할 수 있고, 리턴 값을 받을 수 있다. 아래 코드는 어떻게 block을 동기적으로 선언하고 실행시킬 수 있는지를 다룬다. `aBlock` 변수는 하나의 정수 값을 받아 아무 것도 리턴하지 않는 block으로 선언된다. 그 후 해당 프로토타입과 매칭되는 실제 block이 `aBlock`에 할당되고 inline으로 선언된다. 마지막 줄은 block을 즉시 실행하고, 명시된 정수를 표준 출력한다.
+
+```objective-c
+int x = 123;
+int y = 456;
+
+// Block declaration and assignment
+void (^aBlock)(int) = ^(int z) {
+  print("%d %d %d\n", x, y, z);
+};
+
+// Execute the block
+aBlock(789); // prints: 123 456 789
+```
+
+다음은 block을 설계할 때 고려해야 할 주요 가이드라인에 대한 요약이다.
+
+* dispatch queue를 이용해서 비동기적으로 수행하기를 원하는 block은 스칼라 값을 부모 함수나 메서드에서 캡쳐해서 block에서 사용하는 것이 안전하다. 그러나 큰 구조나 호출 context에서 할당되고 해제되는 포인터 기반 변수를 캡쳐하는 것은 피해라. block이 실행될 때, 포인터에 의해 참조된 메모리가 없을 수 있다. 물론, 메모리나 객체를 직접 할당하고 해당 메모리의 소유권을 명시적으로 block에 전달하는 것은 안전하다.
+* dispatch queue는 추가된 block을 복사하고 block의 실행이 끝났을 때 block을 해제한다. 그러므로 큐에 추가하기 전에 명시적으로 block을 복사할 필요는 없다.
+* 작은 작업을 수행하기에 스레드를 이용하는 것보다 큐가 효율적이지만 큐에서 block을 생성하고 실행시키는 데서 발생하는 오버헤드가 존재한다. 만약 block이 아주 작은 작업을 한다면 inline으로 실행시키는 것이 큐에 전달하는 것보다 저렴할 수 있다. 블록이 아주 작은 작업을 하는 지 확인하는 방법은 성능 도구를 사용해서 각 경로에 대한 metrics를 수집해서 비교하는 것이다.
+* 기본 스레드와 관련된 데이터를 cache하지 말고, 다른 block에서 해당 데이터를 접근할 수 있을 것을 예상해라. 만약 같은 큐에 있는 작업들이 데이터를 공유할 필요가 있다면 dispatch queue의 context pointer를 이용해서 데이터를 저장해라. 어떻게 dispatch queue의 context data에 접근하는 지 알고 싶다면, [Storing Custom Context Information with a Queue](https://developer.apple.com/library/archive/documentation/General/Conceptual/ConcurrencyProgrammingGuide/OperationQueues/OperationQueues.html#//apple_ref/doc/uid/TP40008091-CH102-SW13) 를 참고해라. 
+* block이 Objective-C 객체를 여러 개 생성하는 경우, block 코드의 일부를 해당 객체들의 메모리 관리를 위해 @autorelease block에 추가시키고 싶을 수 있다. GCD dispatch queue가 자기 자신의 autorelease pool을 가지고 있지만, 이는 풀이 언제 비워지는 지 보장하지 않는다. 만약 앱이 메모리에 제약이 있다면, autorelease pool을 직접 생성해서 일정한 간격으로 autoreleased object의 메모리를 해제할 수 있게 해라.
+
+block에 대해 더 궁금하면 [Blocks Programming Topics](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Blocks/Articles/00_Introduction.html#//apple_ref/doc/uid/TP40007502) 를 참고해라. 
