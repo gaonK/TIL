@@ -53,4 +53,5 @@ https://www.acmicpc.net/user/gaon0628
 
 ### leetcode
 
-* [leetcode Binary Tree Inorder](https://ga0n.tistory.com/entry/leetcode-Binary-Tree-Inorder-Traversal)
+* [LeetCode Binary Tree Inorder](https://ga0n.tistory.com/entry/leetcode-Binary-Tree-Inorder-Traversal)
+* [LeetCode Permutations](https://ga0n.tistory.com/entry/LeetCode-Permutations)
