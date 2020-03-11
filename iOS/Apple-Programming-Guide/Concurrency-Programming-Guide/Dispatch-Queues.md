@@ -84,3 +84,16 @@ aBlock(789); // prints: 123 456 789
 * block이 Objective-C 객체를 여러 개 생성하는 경우, block 코드의 일부를 해당 객체들의 메모리 관리를 위해 @autorelease block에 추가시키고 싶을 수 있다. GCD dispatch queue가 자기 자신의 autorelease pool을 가지고 있지만, 이는 풀이 언제 비워지는 지 보장하지 않는다. 만약 앱이 메모리에 제약이 있다면, autorelease pool을 직접 생성해서 일정한 간격으로 autoreleased object의 메모리를 해제할 수 있게 해라.
 
 block에 대해 더 궁금하면 [Blocks Programming Topics](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Blocks/Articles/00_Introduction.html#//apple_ref/doc/uid/TP40007502) 를 참고해라. 
+
+
+
+### Dispatch Queue의 생성과 관리
+
+작업을 큐에 추가하기 전에 어떤 타입의 큐를 사용할 지와 어떻게 사용할 지를 결정해야 한다. dispatch queue는 작업을 직렬적으로 또는 동시적으로 실행시킨다. 추가적으로 큐를 사용하는 특별한 사용 목적이 있는 경우 큐의 특성을 설정할 수 있다. 아래 섹션들은 어떻게 dispatch queue를 생성하고 설정하는 방법을 보여준다.
+
+
+
+#### Global Concurrent Dispatch Queue를 이용하기
+
+concurrent dispatch queue는 병렬적으로 실행시킬 수 있는 작업들을 가지고 있는 경우 유용하다. concurrent queue는 여전히 first-in, first-out 순서로 작업을 실행시키는 큐다. 그렇지만 concurrent queue는 이전 작업이 끝나기 전에 추가적인 작업을 시작한다. 앱의 상태가 변함에 따라 동적으로 어떤 시점에 concurrent queue에 의해 실행되는 전체 작업의 수는 달라진다. 많은 요소들이 concurrent queue에서 실행되는 작업의 수에 영향을 미친다. 사용 가능한 코어의 수, 다른 프로세스에 의한 작업의 수, 다른 serial dispatch queue의 작업들의 수와 우선 순위 등이 영향을 미치는 요소이다.
+
