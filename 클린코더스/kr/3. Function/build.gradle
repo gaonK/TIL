@@ -1,0 +1,17 @@
+plugins {
+    id 'java'
+}
+
+group 'kr.cleancoders'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.fitnesse:fitnesse:20081201"
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+}
