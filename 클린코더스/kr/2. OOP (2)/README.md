@@ -8,7 +8,7 @@ OOP에서 재사용을 말할 때 super class에 기능을 구현해두고 이�
 
 ### 상속의 단점
 
-####Super class의 변경이 다수의 sub class에 영향을 미친다.
+#### Super class의 변경이 다수의 sub class에 영향을 미친다.
 
 Super class에서 구현된 메서드를 상속 받아 사용한다는 것은 마치 라이브러리를 사용하는 것과 같다. super class에서의 변경은 이를 상속 받는 다수의 sub class들의 기능 변경을 초래한다.
 
