@@ -1,4 +1,4 @@
-# 5. Functioin Structure
+# 5. Function Structure
 
 ## Arguments
 
@@ -30,7 +30,6 @@
   * polymorphic interface를 삽입
   * 모듈 A는 인터페이스에 의존하고, 모듈 B는 인터페이스로부터 derive 한다.
   * 이로 인해 B의 소스코드 의존성은 런타임 의존성과 반대가 된다.
-
 * Switch 문장은 어떻게 의존성을 만드나?
   * 각 case 문장은 외부 모듈에 의존성을 가지게 되고 다수의 다른 모듈에 대한 의존성을 가질 수 있다.
   * 이를 fan-out problem이라고 한다.
