@@ -19,8 +19,16 @@ class Money implements Expression {
     return currency;
   }
 
+  Expression plus(Money addend) {
+    return new Sum(this, addend);
+  }
+
   Money times(int multiplier) {
     return new Money(amount * multiplier, currency);
+  }
+
+  public Money reduce(String to) {
+    return this;
   }
 
   public boolean equals(Object object) {
@@ -30,9 +38,5 @@ class Money implements Expression {
 
   public String toString() {
     return amount + " " + currency;
-  }
-
-  public Expression plus(Money addend) {
-    return new Money(amount + addend.amount, currency);
   }
 }
