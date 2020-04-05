@@ -27,9 +27,12 @@
 ## Tell Don't Ask
 
 * Tell other object what to do
-* But not to ask object what the state iis
+* But not to ask object what the state is
 * CQS의 강한 버전. Tell don't ask를 잘 지키면 Command와 Query를 함께 사용하지 않게 된다.
 
+### 생각해보기
+조회와 업데이트가 항상 함께해야 하는 경우는 어떻게 하면 CQS를 위반하지 않을 수 있을까?
+ex) 게시판 조회 -> 조회수 증가
 
 
 ## Law of Demeter
