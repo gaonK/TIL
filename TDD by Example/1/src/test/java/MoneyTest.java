@@ -72,4 +72,26 @@ public class MoneyTest {
     Money result = bank.reduce(Money.dollar(1), "USD");
     assertEquals(Money.dollar(1), result);
   }
+
+  @Test
+  public void testReduceMoneyDifferentCurrency() {
+    Bank bank = new Bank();
+    bank.addRate("CHF", "USD", 2);
+    Money result = bank.reduce(Money.franc(2), "USD");
+    assertEquals(Money.dollar(1), result);
+  }
+
+  // 책에서는 이 테스트가 통과하지 않기 때문에 helper 클래스인 Pair를 Bank에 만들지만 아래의 테스트는 통과해부렸다... ^^
+  @Test
+  public void testArrayEquals() {
+  // 이게 책 버전이었지롱
+  // assertEquals(new Object[] { "abc" }, new Object[] { "abc" });
+  // 이건 책에 달린 주석 버전
+    assertArrayEquals(new Object[] { "abc" }, new Object[] { "abc" });
+  }
+
+  @Test
+  public void testIdentityRate() {
+    assertEquals(1, new Bank().rate("USD", "USD"));
+  }
 }

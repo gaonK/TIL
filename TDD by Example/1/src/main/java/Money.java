@@ -15,6 +15,12 @@ class Money implements Expression {
     return new Money(amount, "CHF");
   }
 
+  @Override
+  public Money reduce(Bank bank, String to) {
+    int rate = bank.rate(currency, to);
+    return new Money(amount / rate, to);
+  }
+
   String currency() {
     return currency;
   }
@@ -25,10 +31,6 @@ class Money implements Expression {
 
   Money times(int multiplier) {
     return new Money(amount * multiplier, currency);
-  }
-
-  public Money reduce(String to) {
-    return this;
   }
 
   public boolean equals(Object object) {
