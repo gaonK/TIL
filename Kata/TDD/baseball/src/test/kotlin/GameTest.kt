@@ -2,7 +2,7 @@ import org.junit.Test
 
 class GameTest {
   @Test
-  fun nothing() {
-
+  fun canCreateGame() {
+    val game = Game()
   }
 }
