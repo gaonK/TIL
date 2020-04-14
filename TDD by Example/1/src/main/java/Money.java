@@ -15,14 +15,14 @@ class Money implements Expression {
     return new Money(amount, "CHF");
   }
 
+  String currency() {
+    return currency;
+  }
+
   @Override
   public Money reduce(Bank bank, String to) {
     int rate = bank.rate(currency, to);
     return new Money(amount / rate, to);
-  }
-
-  String currency() {
-    return currency;
   }
 
   @Override
@@ -30,7 +30,8 @@ class Money implements Expression {
     return new Sum(this, addend);
   }
 
-  Expression times(int multiplier) {
+  @Override
+  public Expression times(int multiplier) {
     return new Money(amount * multiplier, currency);
   }
 
