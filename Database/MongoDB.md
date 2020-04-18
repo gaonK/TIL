@@ -1,4 +1,4 @@
-# MongoDB (1)
+# MongoDB
 
 > ☠️ 나를 울리는 MongoDB ☠️
 
@@ -69,3 +69,24 @@ MongoDB의 document들은 collection에 저장이 된다. Collection은 RDB에�
 
 * [`db.collection.deleteOne()`](https://docs.mongodb.com/manual/reference/method/db.collection.deleteOne/#db.collection.deleteOne) 
 * [`db.collection.deleteMany()`](https://docs.mongodb.com/manual/reference/method/db.collection.deleteMany/#db.collection.deleteMany) 
+
+
+
+## 데이터 dump, restore
+
+https://docs.mongodb.com/manual/tutorial/backup-and-restore-tools/
+
+위의 문서에서는 예시가 '=' 기호를 이용하고 있는데 실제로는 안 들어가는 게 맞다. 현재 돌아가고 있는 MongoDB 데이터를 백업하고 복원시킬 때 사용한다. 나 같은 경우는 이번에 로컬에서 테스트를 하기 위해 실제 데이터를 dump 후 localhost에 restore 해서 작성한 스크립트가 원하는 대로 작동하는지 테스트했다.
+
+### dump 예시
+
+```
+mongodump --host mongodb1.example.net --port 3017 --username user --password pass --out /opt/backup/mongodump-2013-10-24
+```
+
+### restore 예시
+
+```
+mongorestore --host mongodb1.example.net --port 3017 --username user  --authenticationDatabase admin /opt/backup/mongodump-2013-10-24
+```
+
