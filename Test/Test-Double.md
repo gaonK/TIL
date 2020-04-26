@@ -6,7 +6,7 @@
 
 
 
-## Test Doubles
+## Types of Test Doubles
 
 * Dummy
 * Fake
@@ -31,3 +31,5 @@
 * [Test Double](http://xunitpatterns.com/Test%20Double.html)
 * [Mocks Aren't Stubs](https://martinfowler.com/articles/mocksArentStubs.html)
 * [Testing Basics: SUT and DOCs](http://kaczanowscy.pl/tomek/2011-01/testing-basics-sut-and-docs)
+* [Exploring The Continuum Of Test Doubles](https://docs.microsoft.com/ko-kr/archive/msdn-magazine/2007/september/unit-testing-exploring-the-continuum-of-test-doubles)
+
